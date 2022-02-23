@@ -23,8 +23,6 @@ class Ligand:
 
     """
 
-    _observables = ["dg", "dh", "tds", "ki", "ic50", "pic50"]
-
     def __init__(self, d: dict, target: str = None):
         """
         Initialize :py:class:`plbenchmark.ligands.ligand` object from :py:class:`dict` and store data in a
@@ -36,82 +34,10 @@ class Ligand:
         self._target = target
         self._data = pd.Series(d)
         self._molecule = None
-        self._name = self._data["name"]
-        # Expand measurement dict into single fields
-        if "measurement" in list(self._data.index):
-            measurement = pd.Series(self._data["measurement"])
-            measurement.index = ["measurement:" + c for c in measurement.index]
-            self._data.drop(["measurement"], inplace=True)
-            self._data = pd.concat([self._data, measurement])
-            index = self._data.index.to_series().str.split(":", expand=True).fillna("")
-            self._data.index = pd.MultiIndex.from_arrays(
-                [index[0].tolist(), index[1].tolist()]
-            )
-            original_type = self._data[("measurement", "type")]
-            if original_type not in self._observables:
-                raise ValueError(
-                    f"No known measured observable found. "
-                    f"Measured observable should be any of: dg, ki, ic50 or pic50."
-                )
-            # let pint figure out what the unit means
-            unit = utils.unit_registry(self._data[("measurement", "unit")])
-            self._data[("measurement", "error")] = (
-                self._data[("measurement", "error")] * unit
-            )
-            self._data[("measurement", "value")] = (
-                self._data[("measurement", "value")] * unit
-            )
-
-    def derive_observables(
-        self,
-        derived_type="dg",
-        destination="DerivedMeasurement",
-        out_unit=None,
-    ):
-        """
-        Derive observables from (stored) primary data, which is then stored in the :py:class:`pandas.DataFrame`
-
-        :param derived_type: type of derived observable, can be any of 'dg' 'ki', 'ic50' or 'pic50'
-        :param destination: string with column name for 'pandas.DataFrame' where the derived observable should be stored.
-        :param out_unit: unit of type :py:class:`pint` unit of derived coordinate
-        :return: None
-        """
-        original_type = self._data[("measurement", "type")]
-        if original_type not in self._observables:
-            raise ValueError(
-                f"No known measured observable found. "
-                f"Measured observable should be any of: dg, ki, ic50 or pic50."
-            )
-
-        self._data = self._data.append(
-            pd.Series(
-                [
-                    derived_type,
-                    utils.convert_value(
-                        self._data[("measurement", "value")],
-                        original_type,
-                        derived_type,
-                        out_unit=out_unit,
-                    ),
-                    utils.convert_error(
-                        self._data[("measurement", "error")],
-                        self._data[("measurement", "value")],
-                        original_type,
-                        derived_type,
-                        out_unit=out_unit,
-                    ),
-                    out_unit,
-                ],
-                index=pd.MultiIndex.from_tuples(
-                    [
-                        (destination, "type"),
-                        (destination, "value"),
-                        (destination, "error"),
-                        (destination, "unit"),
-                    ]
-                ),
-            )
-        )
+        try:
+            self._name = self._data["name"]
+        except KeyError:
+            print("no name found in data.")
 
     def get_name(self):
         """
@@ -254,9 +180,6 @@ class LigandSet(dict):
         data = yaml.full_load(file)
         for name, d in data.items():
             lig = Ligand(d, target)
-            lig.derive_observables(derived_type="dg")
-            # l.find_links()
-            lig.add_mol_to_frame()
             self[name] = lig
         file.close()
 
