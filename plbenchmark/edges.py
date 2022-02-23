@@ -18,7 +18,7 @@ class Edge:
     :return: None
     """
 
-    def __init__(self, d: dict):
+    def __init__(self, d: dict, n: str):
         """
         Initialize edge class from a dictionary
 
@@ -26,7 +26,7 @@ class Edge:
         :return: None
         """
         self._data = pd.Series(d)
-        self._name = self._data["name"]
+        self._name = n
 
     def add_ligand_data(self, ligand_set):
         """
@@ -36,21 +36,7 @@ class Edge:
         :return: None
         """
         name1 = self._data["ligand_a"]
-        self._data["Mol1"] = ligand_set[name1]._data["ROMol"][0][0]
-        self._data["Smiles1"] = ligand_set[name1]._data["smiles"][0]
-        delta_g1 = ligand_set[name1]._data[("DerivedMeasurement", "value")]
-        error1 = ligand_set[name1]._data[("DerivedMeasurement", "error")]
-
         name2 = self._data["ligand_b"]
-        self._data["Mol2"] = ligand_set[name2]._data["ROMol"][0][0]
-        self._data["Smiles2"] = ligand_set[name2]._data["smiles"][0]
-        delta_g2 = ligand_set[name2]._data[("DerivedMeasurement", "value")]
-        error2 = ligand_set[name2]._data[("DerivedMeasurement", "error")]
-
-        self._data["exp. DeltaG [kcal/mol]"] = round(delta_g2 - delta_g1, 2)
-        self._data["exp. Error [kcal/mol]"] = round(
-            np.sqrt(np.power(error1, 2.0) + np.power(error2, 2.0)), 2
-        )
 
     def get_dataframe(self, columns=None):
         """
