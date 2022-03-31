@@ -89,7 +89,7 @@ class EdgeSet(dict):
         file = open(os.path.join(target_path, "edges.yml"))
         data = yaml.full_load(file)
         for name, d in data.items():
-            edg = Edge(d)
+            edg = Edge(d, name)
             edg.add_ligand_data(ligand_set)
             self[name] = edg
         file.close()
